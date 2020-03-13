@@ -1,0 +1,25 @@
+"use strict";
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+const BalerError_1 = require("./BalerError");
+/**
+ * @summary Recursively resolve the inheritance hierarchy for a given theme.
+ *          Results are ordered starting from the base theme
+ */
+function getThemeHierarchy(theme, themes, deps) {
+    const dependencies = deps || [theme];
+    if (!theme.parentID)
+        return dependencies;
+    const parent = Object.values(themes).find(t => t.themeID === theme.parentID);
+    if (!parent) {
+        throw new BalerError_1.BalerError(`Theme "${theme.themeID}" specified a parent (in theme.xml) of ` +
+            `"${theme.parentID}", but that theme could not be found.`);
+    }
+    dependencies.unshift(parent);
+    return getThemeHierarchy(parent, themes, dependencies);
+}
+exports.getThemeHierarchy = getThemeHierarchy;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZ2V0VGhlbWVIaWVyYXJjaHkuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvZ2V0VGhlbWVIaWVyYXJjaHkudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IjtBQUFBOzs7R0FHRzs7QUFHSCw2Q0FBMEM7QUFFMUM7OztHQUdHO0FBQ0gsU0FBZ0IsaUJBQWlCLENBQzdCLEtBQVksRUFDWixNQUE2QixFQUM3QixJQUFjO0lBRWQsTUFBTSxZQUFZLEdBQUcsSUFBSSxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUM7SUFDckMsSUFBSSxDQUFDLEtBQUssQ0FBQyxRQUFRO1FBQUUsT0FBTyxZQUFZLENBQUM7SUFFekMsTUFBTSxNQUFNLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsQ0FBQyxJQUFJLENBQ3JDLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDLE9BQU8sS0FBSyxLQUFLLENBQUMsUUFBUSxDQUNwQyxDQUFDO0lBQ0YsSUFBSSxDQUFDLE1BQU0sRUFBRTtRQUNULE1BQU0sSUFBSSx1QkFBVSxDQUNoQixVQUFVLEtBQUssQ0FBQyxPQUFPLHlDQUF5QztZQUM1RCxJQUFJLEtBQUssQ0FBQyxRQUFRLHVDQUF1QyxDQUNoRSxDQUFDO0tBQ0w7SUFFRCxZQUFZLENBQUMsT0FBTyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0lBQzdCLE9BQU8saUJBQWlCLENBQUMsTUFBTSxFQUFFLE1BQU0sRUFBRSxZQUFZLENBQUMsQ0FBQztBQUMzRCxDQUFDO0FBcEJELDhDQW9CQyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQ29weXJpZ2h0IMKpIE1hZ2VudG8sIEluYy4gQWxsIHJpZ2h0cyByZXNlcnZlZC5cbiAqIFNlZSBDT1BZSU5HLnR4dCBmb3IgbGljZW5zZSBkZXRhaWxzLlxuICovXG5cbmltcG9ydCB7IFRoZW1lIH0gZnJvbSAnLi90eXBlcyc7XG5pbXBvcnQgeyBCYWxlckVycm9yIH0gZnJvbSAnLi9CYWxlckVycm9yJztcblxuLyoqXG4gKiBAc3VtbWFyeSBSZWN1cnNpdmVseSByZXNvbHZlIHRoZSBpbmhlcml0YW5jZSBoaWVyYXJjaHkgZm9yIGEgZ2l2ZW4gdGhlbWUuXG4gKiAgICAgICAgICBSZXN1bHRzIGFyZSBvcmRlcmVkIHN0YXJ0aW5nIGZyb20gdGhlIGJhc2UgdGhlbWVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGdldFRoZW1lSGllcmFyY2h5KFxuICAgIHRoZW1lOiBUaGVtZSxcbiAgICB0aGVtZXM6IFJlY29yZDxzdHJpbmcsIFRoZW1lPixcbiAgICBkZXBzPzogVGhlbWVbXSxcbik6IFRoZW1lW10ge1xuICAgIGNvbnN0IGRlcGVuZGVuY2llcyA9IGRlcHMgfHwgW3RoZW1lXTtcbiAgICBpZiAoIXRoZW1lLnBhcmVudElEKSByZXR1cm4gZGVwZW5kZW5jaWVzO1xuXG4gICAgY29uc3QgcGFyZW50ID0gT2JqZWN0LnZhbHVlcyh0aGVtZXMpLmZpbmQoXG4gICAgICAgIHQgPT4gdC50aGVtZUlEID09PSB0aGVtZS5wYXJlbnRJRCxcbiAgICApO1xuICAgIGlmICghcGFyZW50KSB7XG4gICAgICAgIHRocm93IG5ldyBCYWxlckVycm9yKFxuICAgICAgICAgICAgYFRoZW1lIFwiJHt0aGVtZS50aGVtZUlEfVwiIHNwZWNpZmllZCBhIHBhcmVudCAoaW4gdGhlbWUueG1sKSBvZiBgICtcbiAgICAgICAgICAgICAgICBgXCIke3RoZW1lLnBhcmVudElEfVwiLCBidXQgdGhhdCB0aGVtZSBjb3VsZCBub3QgYmUgZm91bmQuYCxcbiAgICAgICAgKTtcbiAgICB9XG5cbiAgICBkZXBlbmRlbmNpZXMudW5zaGlmdChwYXJlbnQpO1xuICAgIHJldHVybiBnZXRUaGVtZUhpZXJhcmNoeShwYXJlbnQsIHRoZW1lcywgZGVwZW5kZW5jaWVzKTtcbn1cbiJdfQ==

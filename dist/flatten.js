@@ -1,0 +1,14 @@
+"use strict";
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+// TODO: Just switch callers to use Array#flat
+// or Array#flatMap when an LTS version of node
+// has a version of v8 with it
+function flatten(array) {
+    return Array.prototype.concat.apply([], array);
+}
+exports.flatten = flatten;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZmxhdHRlbi5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uL3NyYy9mbGF0dGVuLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQTs7O0dBR0c7O0FBRUgsOENBQThDO0FBQzlDLCtDQUErQztBQUMvQyw4QkFBOEI7QUFDOUIsU0FBZ0IsT0FBTyxDQUFJLEtBQVk7SUFDbkMsT0FBTyxLQUFLLENBQUMsU0FBUyxDQUFDLE1BQU0sQ0FBQyxLQUFLLENBQUMsRUFBRSxFQUFFLEtBQUssQ0FBQyxDQUFDO0FBQ25ELENBQUM7QUFGRCwwQkFFQyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQ29weXJpZ2h0IMKpIE1hZ2VudG8sIEluYy4gQWxsIHJpZ2h0cyByZXNlcnZlZC5cbiAqIFNlZSBDT1BZSU5HLnR4dCBmb3IgbGljZW5zZSBkZXRhaWxzLlxuICovXG5cbi8vIFRPRE86IEp1c3Qgc3dpdGNoIGNhbGxlcnMgdG8gdXNlIEFycmF5I2ZsYXRcbi8vIG9yIEFycmF5I2ZsYXRNYXAgd2hlbiBhbiBMVFMgdmVyc2lvbiBvZiBub2RlXG4vLyBoYXMgYSB2ZXJzaW9uIG9mIHY4IHdpdGggaXRcbmV4cG9ydCBmdW5jdGlvbiBmbGF0dGVuPFQ+KGFycmF5OiBUW11bXSk6IFRbXSB7XG4gICAgcmV0dXJuIEFycmF5LnByb3RvdHlwZS5jb25jYXQuYXBwbHkoW10sIGFycmF5KTtcbn1cbiJdfQ==

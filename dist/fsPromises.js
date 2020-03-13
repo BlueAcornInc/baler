@@ -1,0 +1,24 @@
+"use strict";
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+// node.js already has a promise-based API for all async fs operations
+// that is available via require('fs').promises. However, in node.js 10.x
+// (LTS version at the time of writing) a really ugly "Experimental Feature"
+// warning is logged to stdout, which is going to confuse people unfamiliar
+// with node. This module is to prevent those warnings, and can be deleted
+// when the min node version for this lib is 12.x
+const fs_1 = __importDefault(require("fs"));
+const util_1 = require("util");
+exports.readFile = util_1.promisify(fs_1.default.readFile);
+exports.mkdir = util_1.promisify(fs_1.default.mkdir);
+exports.writeFile = util_1.promisify(fs_1.default.writeFile);
+exports.readdir = util_1.promisify(fs_1.default.readdir);
+exports.copyFile = util_1.promisify(fs_1.default.copyFile);
+exports.access = util_1.promisify(fs_1.default.access);
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZnNQcm9taXNlcy5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uL3NyYy9mc1Byb21pc2VzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQTs7O0dBR0c7Ozs7O0FBRUgsc0VBQXNFO0FBQ3RFLHlFQUF5RTtBQUN6RSw0RUFBNEU7QUFDNUUsMkVBQTJFO0FBQzNFLDBFQUEwRTtBQUMxRSxpREFBaUQ7QUFFakQsNENBQW9CO0FBQ3BCLCtCQUFpQztBQUVwQixRQUFBLFFBQVEsR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxRQUFRLENBQUMsQ0FBQztBQUNsQyxRQUFBLEtBQUssR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxLQUFLLENBQUMsQ0FBQztBQUM1QixRQUFBLFNBQVMsR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxTQUFTLENBQUMsQ0FBQztBQUNwQyxRQUFBLE9BQU8sR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxPQUFPLENBQUMsQ0FBQztBQUNoQyxRQUFBLFFBQVEsR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxRQUFRLENBQUMsQ0FBQztBQUNsQyxRQUFBLE1BQU0sR0FBRyxnQkFBUyxDQUFDLFlBQUUsQ0FBQyxNQUFNLENBQUMsQ0FBQyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQ29weXJpZ2h0IMKpIE1hZ2VudG8sIEluYy4gQWxsIHJpZ2h0cyByZXNlcnZlZC5cbiAqIFNlZSBDT1BZSU5HLnR4dCBmb3IgbGljZW5zZSBkZXRhaWxzLlxuICovXG5cbi8vIG5vZGUuanMgYWxyZWFkeSBoYXMgYSBwcm9taXNlLWJhc2VkIEFQSSBmb3IgYWxsIGFzeW5jIGZzIG9wZXJhdGlvbnNcbi8vIHRoYXQgaXMgYXZhaWxhYmxlIHZpYSByZXF1aXJlKCdmcycpLnByb21pc2VzLiBIb3dldmVyLCBpbiBub2RlLmpzIDEwLnhcbi8vIChMVFMgdmVyc2lvbiBhdCB0aGUgdGltZSBvZiB3cml0aW5nKSBhIHJlYWxseSB1Z2x5IFwiRXhwZXJpbWVudGFsIEZlYXR1cmVcIlxuLy8gd2FybmluZyBpcyBsb2dnZWQgdG8gc3Rkb3V0LCB3aGljaCBpcyBnb2luZyB0byBjb25mdXNlIHBlb3BsZSB1bmZhbWlsaWFyXG4vLyB3aXRoIG5vZGUuIFRoaXMgbW9kdWxlIGlzIHRvIHByZXZlbnQgdGhvc2Ugd2FybmluZ3MsIGFuZCBjYW4gYmUgZGVsZXRlZFxuLy8gd2hlbiB0aGUgbWluIG5vZGUgdmVyc2lvbiBmb3IgdGhpcyBsaWIgaXMgMTIueFxuXG5pbXBvcnQgZnMgZnJvbSAnZnMnO1xuaW1wb3J0IHsgcHJvbWlzaWZ5IH0gZnJvbSAndXRpbCc7XG5cbmV4cG9ydCBjb25zdCByZWFkRmlsZSA9IHByb21pc2lmeShmcy5yZWFkRmlsZSk7XG5leHBvcnQgY29uc3QgbWtkaXIgPSBwcm9taXNpZnkoZnMubWtkaXIpO1xuZXhwb3J0IGNvbnN0IHdyaXRlRmlsZSA9IHByb21pc2lmeShmcy53cml0ZUZpbGUpO1xuZXhwb3J0IGNvbnN0IHJlYWRkaXIgPSBwcm9taXNpZnkoZnMucmVhZGRpcik7XG5leHBvcnQgY29uc3QgY29weUZpbGUgPSBwcm9taXNpZnkoZnMuY29weUZpbGUpO1xuZXhwb3J0IGNvbnN0IGFjY2VzcyA9IHByb21pc2lmeShmcy5hY2Nlc3MpO1xuIl19

@@ -1,0 +1,11 @@
+"use strict";
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+async function graph(magentoRoot, theme) {
+    console.log('Graph generation has not been implemented yet');
+}
+exports.graph = graph;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZ3JhcGguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvY2xpL2dyYXBoLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQTs7O0dBR0c7O0FBRUksS0FBSyxVQUFVLEtBQUssQ0FBQyxXQUFtQixFQUFFLEtBQWE7SUFDMUQsT0FBTyxDQUFDLEdBQUcsQ0FBQywrQ0FBK0MsQ0FBQyxDQUFDO0FBQ2pFLENBQUM7QUFGRCxzQkFFQyIsInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQ29weXJpZ2h0IMKpIE1hZ2VudG8sIEluYy4gQWxsIHJpZ2h0cyByZXNlcnZlZC5cbiAqIFNlZSBDT1BZSU5HLnR4dCBmb3IgbGljZW5zZSBkZXRhaWxzLlxuICovXG5cbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBncmFwaChtYWdlbnRvUm9vdDogc3RyaW5nLCB0aGVtZTogc3RyaW5nKSB7XG4gICAgY29uc29sZS5sb2coJ0dyYXBoIGdlbmVyYXRpb24gaGFzIG5vdCBiZWVuIGltcGxlbWVudGVkIHlldCcpO1xufVxuIl19
