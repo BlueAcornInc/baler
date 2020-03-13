@@ -6,7 +6,16 @@
 import { StoreData, Theme, MagentoRequireConfig } from './types';
 import { join, dirname } from 'path';
 import { createMinifier, Minifier } from './createMinifier';
-import { getLocalesForDeployedTheme, getStaticDirForTheme } from './magentoFS';
+import {
+    getLocalesForDeployedTheme,
+    getStaticDirForTheme,
+    getPHTMLFilesEligibleForUseWithTheme,
+    getLayoutFilesEligibleForUseWithTheme,
+    getEnabledModules,
+    getComponents,
+    getPHTMLFilesFromLayoutHandle,
+    getDepsFromPHTMLPath
+} from './magentoFS';
 import {
     getRequireConfigFromDir,
     generateBundleRequireConfig,
@@ -69,9 +78,82 @@ async function optimizeTheme(
         theme,
         minifier,
     );
-    // TODO: Build phtml dependency graph
 
     return coreBundleResults;
+}
+
+async function getLayoutBasedDeps(
+    magentoRoot: string,
+    theme: Theme
+): Promise<Map<string, Set<string>>> {
+    const enabledModules = await getEnabledModules(magentoRoot);
+    const { modules, themes } = await getComponents(magentoRoot);
+    const themeFallback = [];
+    let processing = true;
+    let currentFallback = theme;
+
+    // Create theme fallback
+    while (processing) {
+        themeFallback.push(currentFallback);
+        if (currentFallback.parentID) {
+            currentFallback = themes[currentFallback.parentID]
+        } else {
+            processing = false;
+        }
+    }
+
+    // Get all layout files
+    const layoutFiles = await getLayoutFilesEligibleForUseWithTheme(
+        themeFallback,
+        enabledModules,
+        modules
+    );
+
+    // Create a map of layout file => templateFiles[]
+    const layoutToTemplatesMap = new Map();
+    // Create a map of layout file => js[]
+    const layoutToDepsMap = new Map();
+
+    for (const layoutFile of layoutFiles) {
+        let layoutHandle = layoutFile.split('/').pop();
+        if (!layoutHandle) {
+            continue;
+        } else {
+            layoutHandle = layoutHandle.replace('.xml', '');
+        }
+        if (!layoutToTemplatesMap.has(layoutHandle)) {
+            layoutToTemplatesMap.set(layoutHandle, new Set());
+        }
+        if (!layoutToDepsMap.has(layoutHandle)) {
+            layoutToDepsMap.set(layoutHandle, new Set());
+        }
+        const templatesSet = layoutToTemplatesMap.get(layoutHandle);
+        const templates = await getPHTMLFilesFromLayoutHandle(layoutFile, themeFallback, modules);
+        for (const template of templates) {
+            templatesSet.add(template);
+        }
+        layoutToTemplatesMap.set(layoutHandle, templatesSet);
+    }
+
+
+    // Iterate over each layout handle
+    for (const [handle, templatesSet] of layoutToTemplatesMap) {
+        // Iterate over each templateFile
+        for (const template of Array.from(templatesSet)) {
+            const depsForLayoutHandle = layoutToDepsMap.get(handle);
+            // @ts-ignore
+            const depsForTemplate = await getDepsFromPHTMLPath(template);
+            for (const dep of depsForTemplate) {
+                depsForLayoutHandle.add(dep);
+            }
+            layoutToDepsMap.set(handle, depsForLayoutHandle);
+        }
+    }
+
+    return layoutToDepsMap;
+    // read the phtml file,
+    // gather the dependencies
+    // create the bundle
 }
 
 /**
@@ -97,7 +179,17 @@ async function createCoreBundle(
     const { requireConfig, rawRequireConfig } = await getRequireConfigFromDir(
         firstLocaleRoot,
     );
-    const entryPoints = getEntryPointsFromConfig(requireConfig, theme.themeID);
+    let entryPoints = getEntryPointsFromConfig(requireConfig, theme.themeID);
+    const layoutDeps = await getLayoutBasedDeps(
+        magentoRoot,
+        theme
+    );
+    // Combine default.xml deps with core bundle
+    const defaultDeps = layoutDeps.get('default');
+    if (defaultDeps) {
+        entryPoints = entryPoints.concat(Array.from(defaultDeps))
+        layoutDeps.delete('default');
+    }
 
     const { graph, resolvedEntryIDs } = await traceAMDDependencies(
         entryPoints,
@@ -116,22 +208,52 @@ async function createCoreBundle(
     );
     endBundleTask(`Created core bundle file`);
 
+    // Create bundles for all other layout xml handles
+    const otherBundles = new Map();
+    const otherBundlesOutput = [];
+    for (const [ layoutHandle, entryPoints ] of layoutDeps) {
+        const { graph, resolvedEntryIDs } = await traceAMDDependencies(
+            Array.from(entryPoints),
+            requireConfig,
+            firstLocaleRoot,
+        );
+        const layoutBundleDeps = computeDepsForBundle(graph, resolvedEntryIDs).filter(dep => !coreBundleDeps.includes(dep));
+        // Only create bundles for handles that have dependencies
+        if (layoutBundleDeps.length > 0) {
+            const endLayoutBundleTask = cliTask(`Creating bundle for: ${layoutHandle}`, theme.themeID);
+            otherBundles.set(layoutHandle, layoutBundleDeps);
+            const { bundle, bundleFilename, map } = await createBundleFromDeps(
+                `core-${layoutHandle}`,
+                layoutBundleDeps,
+                firstLocaleRoot,
+                requireConfig,
+                theme.themeID
+            );
+            otherBundlesOutput.push([bundle, bundleFilename, map])
+            endLayoutBundleTask(`Creating bundle for: ${layoutHandle}`);
+        }
+
+    }
+
     const newRequireConfig = generateBundleRequireConfig(
         rawRequireConfig,
         'core-bundle',
         coreBundleDeps,
+        otherBundles
     );
 
     const endMinifyTask = cliTask(
         `Minify core bundle and RequireJS config`,
         theme.themeID,
     );
-    const [minifiedCoreBundle, minifiedRequireConfig] = await Promise.all([
+    const [minifiedCoreBundle, minifiedRequireConfig, ...otherMinifiedBundles] = await Promise.all([
         minifier.minifyFromString(bundle, bundleFilename, map),
         minifier.minifyFromString(
             newRequireConfig,
             'requirejs-bundle-config.js',
         ),
+        // @ts-ignore
+        ...otherBundlesOutput.map(otherBundleOutput => minifier.minifyFromString(...otherBundleOutput))
     ]);
     const coreBundleSizes = {
         beforeMin: Buffer.from(bundle).byteLength,
@@ -161,6 +283,21 @@ async function createCoreBundle(
             source: minifiedRequireConfig.map,
         },
     ];
+    let idx = 0;
+    for (const [, otherBundleFileName] of otherBundlesOutput) {
+        const minifiedBundle = otherMinifiedBundles[idx];
+        files.push({
+            pathFromLocaleRoot: join(BALER_META_DIR, otherBundleFileName),
+            // @ts-ignore
+            source: minifiedBundle.code
+        });
+        files.push({
+            pathFromLocaleRoot: join(BALER_META_DIR, `${otherBundleFileName}.map`),
+            // @ts-ignore
+            source: minifiedBundle.map
+        });
+        idx++;
+    }
 
     await writeFilesToAllLocales(magentoRoot, theme, files, deployedLocales);
 

@@ -119,7 +119,14 @@ export function generateBundleRequireConfig(
     rawConfig: string,
     bundleID: string,
     bundledDeps: string[],
+    additionalBundles: Map<string, string[]>
 ) {
+    let additional = '';
+
+    for (const [mod, deps] of additionalBundles) {
+        additional += `'balerbundles/core-${mod}': ${JSON.stringify(deps, null, 2)},\n`;
+    }
+
     // TODO: Deal with formatting of this JS better. See `requireConfig.unit.js`
     // for an example of how bad the formatting currently looks
     return `(function() {
@@ -129,7 +136,8 @@ export function generateBundleRequireConfig(
     // load bundled modules from the network
     require.config({
         bundles: {
-            'balerbundles/${bundleID}': ${JSON.stringify(bundledDeps, null, 2)}
+            'balerbundles/${bundleID}': ${JSON.stringify(bundledDeps, null, 2)},
+            ${additional}
         }
     });
 })();

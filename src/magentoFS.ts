@@ -4,6 +4,7 @@
  */
 
 import { readFile, readdir } from './fsPromises';
+import { statSync } from 'fs';
 import { join } from 'path';
 import glob from 'fast-glob';
 import { flatten } from './flatten';
@@ -14,6 +15,7 @@ import { findUp } from './findUp';
 import { getModulesAndThemesFromMagento } from './magentoInterop';
 import { BalerError } from './BalerError';
 import { trace } from './trace';
+import { parseTemplateDeps } from './parseTemplateDeps';
 
 /**
  * @summary Verify all the dirs we need from Magento are available.
@@ -176,6 +178,87 @@ export async function getPHTMLFilesEligibleForUseWithTheme(
     return glob([...moduleGlobs, ...themeGlobs], {
         onlyFiles: true,
     });
+}
+
+export async function getLayoutFilesEligibleForUseWithTheme(
+    themeHierarchy: Theme[],
+    enabledModules: string[],
+    modules: Record<string, Module>,
+) {
+    const moduleGlobs = enabledModules.map(moduleID => {
+        const mod = modules[moduleID];
+        return join(
+            mod.path,
+            'view',
+            `{${themeHierarchy[0].area},base}`,
+            'layout',
+            '*.xml',
+        );
+    });
+
+    const themeGlobs = flatten(
+        enabledModules.map(m => 
+            themeHierarchy.map(
+                t => `${t.path}/${m}/layout/*.xml`
+            )    
+        )
+    );
+
+    return glob([...moduleGlobs, ...themeGlobs], {
+        onlyFiles: true
+    });
+};
+
+export async function getPHTMLFilesFromLayoutHandle(
+    layoutFile: string,
+    themeHierarchy: Theme[],
+    modules: Record<string, Module>
+): Promise<string[]> {
+    const templates = [];
+    // Read layout file
+    const layoutXml = await readFile(layoutFile, 'utf8').catch(() => '');
+    // Get phtml files
+    let matches = layoutXml.match(/template="(.*?)"/g);
+    if (matches) {
+        const matchesArray = matches.map(match => match.match(/"(.*?)"/));
+        for (const match of matchesArray) {
+            if (match instanceof Array) {
+                templates.push(match[1]);
+            }
+        }
+    }
+    // Convert phtml files into file paths
+    return templates
+        // Fully qualified only
+        .filter(template => template.split('::').length > 1)
+        // Resolve path
+        .map(template => {
+            const [moduleName, file] = template.split('::');
+            const fallbackPaths = themeHierarchy
+                .map(theme => `${theme.path}/${moduleName}/templates/${file}`);
+            fallbackPaths.push(`${modules[moduleName].path}/view/${themeHierarchy[0].area}/templates/${file}`);
+            fallbackPaths.push(`${modules[moduleName].path}/view/base/templates/${file}`);
+
+            for (const fallback of fallbackPaths) {
+                try {
+                    const found = statSync(fallback);
+                    return fallback;
+                } catch (err) {}
+            }
+
+            return ''
+        })
+        // Remove templates that we couldn't find
+        .filter((template) => template.length > 0);
+};
+
+export async function getDepsFromPHTMLPath(
+    templateFile: string
+): Promise<string[]> {
+    const templateContent = await readFile(templateFile, 'utf8').catch(() => '');
+    const { deps } = parseTemplateDeps(templateContent);
+
+    return deps || [];
 }
 
 export async function getLocalesForDeployedTheme(

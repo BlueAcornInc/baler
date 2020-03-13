@@ -35,7 +35,8 @@ export async function createBundleFromDeps(
             getFinalModuleSource(d, baseDir, resolver, requireConfig),
         ),
     );
-    const { bundle, depsWithInvalidShims } = createBundle(transformedModules);
+    // @ts-ignore
+    const { bundle, depsWithInvalidShims } = createBundle(transformedModules.filter(mod => !mod.isInvalid));
     if (depsWithInvalidShims) {
         // TODO: surface in CLI at end of run
     }
@@ -54,6 +55,11 @@ export async function createBundleFromDeps(
     };
 }
 
+// DO NOT BUNDLE THESE
+const blacklistedDeps = [
+    'prototype'
+];
+
 async function getFinalModuleSource(
     dep: string,
     baseDir: string,
@@ -62,7 +68,16 @@ async function getFinalModuleSource(
 ) {
     const resolvedDep = resolver(dep);
     const path = join(baseDir, resolvedDep.modulePath);
-    const source = await readFile(path, 'utf8');
+    let source;
+    try {
+        if (blacklistedDeps.includes(dep)) {
+            console.log(`Ignoring ${dep}`);
+            throw new Error('No.');
+        }
+        source = await readFile(path, 'utf8');
+    } catch (err) {
+        return { dep, file: '', isInvalid: true };
+    }
     const isText = resolvedDep.pluginID === 'text';
     const shims = getShimsForModule(dep, requireConfig);
     const hasDefine = isAMDWithDefine(source);
