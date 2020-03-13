@@ -102,12 +102,19 @@ async function getLayoutBasedDeps(
         }
     }
 
+    console.log(themeFallback);
+    console.log(enabledModules);
+    console.log(modules);
+
     // Get all layout files
     const layoutFiles = await getLayoutFilesEligibleForUseWithTheme(
         themeFallback,
         enabledModules,
         modules
     );
+
+    // Logging to figure out if a glob is failing on cloud
+    console.log(layoutFiles);
 
     // Create a map of layout file => templateFiles[]
     const layoutToTemplatesMap = new Map();
