@@ -3,23 +3,11 @@
  * See COPYING.txt for license details.
  */
 
-import execa from 'execa';
 import { ComponentPaths } from './types';
-import { BalerError } from './BalerError';
 import { trace } from './trace';
-
-// Note: Loading the very minimal amount of code on the PHP side
-// so that we don't hit the performance bottleneck of bootstrapping
-// the entire Magento application. Thanks Vinai!
-const phpSource = `
-    require 'vendor/autoload.php';
-    echo json_encode([
-        "themes" => (new \\Magento\\Framework\\Component\\ComponentRegistrar)->getPaths('theme'),
-        "modules" => (new \\Magento\\Framework\\Component\\ComponentRegistrar)->getPaths('module')
-    ]);
-`;
-
-const PHP_BIN = process.env.BALER_PHP_PATH || 'php';
+import glob from 'fast-glob';
+import { join } from 'path';
+import { readFile, readdir } from './fsPromises';
 
 /**
  * @summary Invokes the PHP binary and extracts info about modules
@@ -30,21 +18,69 @@ export async function getModulesAndThemesFromMagento(
 ): Promise<ComponentPaths> {
     trace('requesting module/theme payload from magento');
 
-    try {
-        const { stdout } = await execa(PHP_BIN, [`-r`, phpSource], {
-            cwd: magentoRoot,
-        });
-        trace(`received modules/themes payload from magento: ${stdout}`);
-        return JSON.parse(stdout) as ComponentPaths;
-    } catch (err) {
-        trace(`failed extracting data from magento: ${err.stack}`);
-        throw new BalerError(
-            'Unable to extract list of modules/theme from Magento.\n\n' +
-                'Common causes:\n' +
-                '  - "php" binary not available on $PATH. The path to the PHP binary can ' +
-                'be specified using the $BALER_PHP_PATH environment variable\n' +
-                '  - Broken Magento installation. You can test that things are working ' +
-                'by running "bin/magento module:status"',
-        );
-    }
+    const dirs = [];
+    dirs.push(
+        join(
+            process.cwd(),
+            'app',
+            '**/registration.php'
+        )
+    );
+    dirs.push(
+        join(
+            process.cwd(),
+            'vendor',
+            '**/registration.php'
+        )
+    );
+
+    const registrationFiles = await glob(dirs)
+
+    const componentPaths: ComponentPaths = {
+        themes: {},
+        modules: {}
+    };
+
+    // read each registration file and register module/theme path
+    const pendingParse = registrationFiles.map(async (filePath) => {
+        const registrationFile = await readFile(filePath, 'utf8');
+        const dirParts = filePath.split('/')
+        dirParts.pop();
+        const dir = dirParts.join('/');
+        const matches = registrationFile.replace(/\s+/g,'').match(/::register\((.*?)\);/);
+        if (matches && matches.length) {
+            const [ type, name, location ] = matches[1].split(',');
+            const formattedType = type.split('::')[1];
+            const formattedName = name.replace(/[\'\"]/g, '');
+            const formattedLocation = location.replace('__DIR__', dir).replace(/[\.\'\"]/g, '');
+
+            const blacklist = ['_files', 'tests'];
+            // stop here if this is a test file
+            for (const blacklisted of blacklist) {
+                if (formattedLocation.indexOf(blacklisted) > -1) {
+                    return;
+                }
+            }
+
+            // Error handle invalid parsing of path and remove, this will cause globbing to fail silently
+            try {
+                await readdir(formattedLocation);
+            } catch (err) {
+                return;
+            }
+
+            switch (formattedType) {
+                case "MODULE":
+                    componentPaths.modules[formattedName] = formattedLocation;
+                    break;
+                case "THEME":
+                    componentPaths.themes[formattedName] = formattedLocation;
+                    break;
+            }
+        }
+    });
+
+    await Promise.all(pendingParse);
+
+    return componentPaths;
 }

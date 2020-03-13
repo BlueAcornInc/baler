@@ -188,7 +188,7 @@ export async function getLayoutFilesEligibleForUseWithTheme(
     const moduleGlobs = enabledModules.map(moduleID => {
         const mod = modules[moduleID];
         return join(
-            mod.path,
+            (mod && mod.path) || 'some/nonexistant/place/cause/seerestofthiscommit',
             'view',
             `{${themeHierarchy[0].area},base}`,
             'layout',
