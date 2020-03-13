@@ -185,12 +185,22 @@ export async function getLayoutFilesEligibleForUseWithTheme(
     enabledModules: string[],
     modules: Record<string, Module>,
 ) {
-    const moduleGlobs = enabledModules.map(moduleID => {
+    const moduleGlobs1 = enabledModules.map(moduleID => {
         const mod = modules[moduleID];
         return join(
             (mod && mod.path) || 'some/nonexistant/place/cause/seerestofthiscommit',
             'view',
-            `{${themeHierarchy[0].area},base}`,
+            themeHierarchy[0].area,
+            'layout',
+            '*.xml',
+        );
+    });
+    const moduleGlobs2 = enabledModules.map(moduleID => {
+        const mod = modules[moduleID];
+        return join(
+            (mod && mod.path) || 'some/nonexistant/place/cause/seerestofthiscommit',
+            'view',
+            'base',
             'layout',
             '*.xml',
         );
@@ -204,7 +214,7 @@ export async function getLayoutFilesEligibleForUseWithTheme(
         )
     );
 
-    return glob([...moduleGlobs, ...themeGlobs], {
+    return glob([...moduleGlobs1, ...moduleGlobs2, ...themeGlobs], {
         onlyFiles: true
     });
 };
