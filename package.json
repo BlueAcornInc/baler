@@ -1,7 +1,7 @@
 {
   "name": "@magento/baler",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A proof of concept to see how feasible it is to do static analysis of all JavaScript dependencies hidden within Magento 2 templates (phtml/html)",
   "main": "dist/index.js",
   "bin": {
