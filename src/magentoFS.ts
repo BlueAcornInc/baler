@@ -7,6 +7,8 @@ import { readFile, readdir } from './fsPromises';
 import { statSync } from 'fs';
 import { join } from 'path';
 import glob from 'fast-glob';
+// @ts-ignore
+import globThatWorksWithCloud from 'glob';
 import { flatten } from './flatten';
 import { Theme, Components, Module, ComponentPaths } from './types';
 import fromEntries from 'fromentries';
@@ -185,38 +187,77 @@ export async function getLayoutFilesEligibleForUseWithTheme(
     enabledModules: string[],
     modules: Record<string, Module>,
 ) {
-    const moduleGlobs1 = enabledModules.map(moduleID => {
-        const mod = modules[moduleID];
-        return join(
-            (mod && mod.path) || 'some/nonexistant/place/cause/seerestofthiscommit',
-            'view',
-            themeHierarchy[0].area,
-            'layout',
-            '*.xml',
-        );
-    });
-    const moduleGlobs2 = enabledModules.map(moduleID => {
-        const mod = modules[moduleID];
-        return join(
-            (mod && mod.path) || 'some/nonexistant/place/cause/seerestofthiscommit',
-            'view',
-            'base',
-            'layout',
-            '*.xml',
-        );
-    });
+    const promises = [];
 
-    const themeGlobs = flatten(
-        enabledModules.map(m => 
-            themeHierarchy.map(
-                t => `${t.path}/${m}/layout/*.xml`
-            )    
-        )
-    );
+    const globbyCallback = (resolve: Function, reject: Function) => (err: string, files: string[]) => {
+        if (err) {
+            reject(err);
+        } else {
+            resolve(files);
+        }
+    };
 
-    return glob([...moduleGlobs1, ...moduleGlobs2, ...themeGlobs], {
-        onlyFiles: true
-    });
+    for (const enabledModule of enabledModules) {
+        const mod = modules[enabledModule];
+        if (mod) {
+            promises.push(
+                new Promise((resolve, reject) => {
+                    globThatWorksWithCloud(
+                        join(
+                            mod.path,
+                            'view',
+                            themeHierarchy[0].area,
+                            'layout',
+                            '*.xml'
+                        ),
+                        globbyCallback(resolve, reject)
+                    )
+                })
+            );
+
+            promises.push(
+                new Promise((resolve, reject) => {
+                    globThatWorksWithCloud(
+                        join(
+                            mod.path,
+                            'view',
+                            'base',
+                            'layout',
+                            '*.xml'
+                        ),
+                        globbyCallback(resolve, reject)
+                    )
+                })
+            )
+
+            for (const theme of themeHierarchy) {
+                promises.push(
+                    new Promise((resolve, reject) => {
+                        globThatWorksWithCloud(
+                            join(
+                                theme.path,
+                                enabledModule,
+                                'layout',
+                                '*.xml'
+                            ),
+                            globbyCallback(resolve, reject)
+                        )
+                    })
+                );
+            }
+        }
+    }
+
+    const filePaths = await Promise.all(promises);
+    let allPaths: string[] = [];
+
+    for (const filePathsArray of filePaths) {
+        // @ts-ignore
+        allPaths = allPaths.concat(filePathsArray);
+    }
+    console.log(allPaths);
+
+    return allPaths;
 };
 
 export async function getPHTMLFilesFromLayoutHandle(
