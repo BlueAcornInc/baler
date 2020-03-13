@@ -191,8 +191,10 @@ export async function getLayoutFilesEligibleForUseWithTheme(
 
     const globbyCallback = (resolve: Function, reject: Function) => (err: string, files: string[]) => {
         if (err) {
+            console.log(err);
             reject(err);
         } else {
+            console.log(files);
             resolve(files);
         }
     };
@@ -255,7 +257,6 @@ export async function getLayoutFilesEligibleForUseWithTheme(
         // @ts-ignore
         allPaths = allPaths.concat(filePathsArray);
     }
-    console.log(allPaths);
 
     return allPaths;
 };
