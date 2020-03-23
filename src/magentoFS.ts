@@ -50,8 +50,11 @@ export async function getEnabledModules(magentoRoot: string) {
         );
     }
 
-    const [, rawArrayBody = ''] =
+    let [, rawArrayBody = ''] =
         rawConfig.match(/'modules'\s*=>\s*\[(.+)\]/s) || [];
+    if (!rawArrayBody) {
+        rawConfig.match(/'modules'\s*=>\s*array\((.+)\)/s) || [];
+    }
     const items = rawArrayBody.split(',').map(t => t.trim());
 
     const enabledModules: string[] = [];
