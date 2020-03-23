@@ -53,7 +53,7 @@ export async function getEnabledModules(magentoRoot: string) {
     let [, rawArrayBody = ''] =
         rawConfig.match(/'modules'\s*=>\s*\[(.+)\]/s) || [];
     if (!rawArrayBody) {
-        rawConfig.match(/'modules'\s*=>\s*array\((.+)\)/s) || [];
+        [, rawArrayBody = ''] = rawConfig.match(/'modules'\s*=>\s*array\((.+)\)/s) || [];
     }
     const items = rawArrayBody.split(',').map(t => t.trim());
 
@@ -194,10 +194,8 @@ export async function getLayoutFilesEligibleForUseWithTheme(
 
     const globbyCallback = (resolve: Function, reject: Function) => (err: string, files: string[]) => {
         if (err) {
-            console.log(err);
             reject(err);
         } else {
-            console.log(files);
             resolve(files);
         }
     };

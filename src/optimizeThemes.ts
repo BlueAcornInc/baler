@@ -108,10 +108,6 @@ async function getLayoutBasedDeps(
         enabledModules,
         modules
     );
-    console.log(process.cwd());
-
-    // Logging to figure out if a glob is failing on cloud
-    console.log(layoutFiles);
 
     // Create a map of layout file => templateFiles[]
     const layoutToTemplatesMap = new Map();
