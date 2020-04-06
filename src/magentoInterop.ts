@@ -49,7 +49,11 @@ export async function getModulesAndThemesFromMagento(
         const dir = dirParts.join('/');
         const matches = registrationFile.replace(/\s+/g,'').match(/::register\((.*?)\);/);
         if (matches && matches.length) {
-            const [ type, name, location ] = matches[1].split(',');
+            const splitMatches = matches[1].split(',');
+            if (splitMatches.length !== 3) {
+                return;
+            }
+            const [ type, name, location ] = splitMatches;
             const formattedType = type.split('::')[1];
             const formattedName = name.replace(/[\'\"]/g, '');
             const formattedLocation = location.replace('__DIR__', dir).replace(/[\.\'\"]/g, '');
